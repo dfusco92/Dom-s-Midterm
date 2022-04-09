@@ -5,26 +5,149 @@ date: "4/9/2022"
 output: html_document
 ---
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+library(tidyverse)
+library(janitor)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+CA_Agencies <- read_csv(file = "30 Largest CA Agencies.csv")
+CA_Agencies <- CA_Agencies %>% 
+  clean_names() %>% 
+  group_by(department_name) %>% 
+  mutate(total_followers = sum(facebook_followers, twitter_followers, instagram_followers, linked_in_followers, na.rm = TRUE)) %>% 
+  mutate(avg_pay= payroll/staff_size)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+# Not Used in the Slides
+CA_Agencies %>% 
+  ggplot(aes(department_name, avg_pay)) +
+  geom_segment(aes(xend=department_name, yend=0)) +
+  coord_flip() +
+    geom_point( size=4, color="salmon2") +
+    theme_bw() +
+    labs(y="Average Pay",title="CA Agency Payscale") + 
+    theme(axis.title.y = element_blank())
+  
+```
+
+```{r}
+# Not Used in the Slides
+CA_Agencies %>% 
+  group_by(department_name) %>% 
+  select(department_name, total_followers) %>% 
+  arrange(desc(total_followers)) %>% 
+  ggplot(aes(department_name, total_followers)) +
+  geom_col() +
+  coord_flip()
+```
+```{r}
+# Used in slide p6
+CA_Agencies %>% 
+   mutate(localized = fct_recode(localized, "Localized" = "YES", "Not Localized" = "NO", "Google Translate" = "Google")) %>% 
+  group_by(localized) %>% 
+  summarise(avg_followers = mean(total_followers)) %>% 
+  ggplot(aes(x=localized, y=avg_followers, color = localized, fill = localized)) +
+  geom_col() +
+   theme(axis.title.x = element_blank(),
+          legend.position = "none") +
+  labs(title= "Average Social Media Followers by Webpage Localization", y="Total Followers")+
+  scale_y_continuous(labels = scales::comma)
+```
+
+```{r}
+# Used in slide p5
+CA_Agencies %>% 
+  mutate(localized = fct_recode(localized, "Localized" = "YES", "Not Localized" = "NO", "Google Translate" = "Google")) %>% 
+  ggplot(aes(x=localized,color=localized, fill=localized)) +
+  geom_bar() +
+  theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(), legend.position = "none") +
+  labs(title = "Number of California State Agency Webpage Localization")+
+  scale_y_continuous(labels = scales::number_format(accuracy = 1))
+
+```
+```{r}
+# Not used in slides
+CA_Agencies %>% 
+  filter(youtube_view <= 10000000) %>% 
+  ggplot(aes(department_name, youtube_view, na.rm = TRUE)) +
+  geom_col() +
+  coord_flip()
+```
+```{r}
+#  Used in slide p4
+CA_Agencies %>% 
+  filter(total_followers>=50000) %>% 
+  pivot_longer(c("twitter_followers", "facebook_followers", "instagram_followers", "linked_in_followers"), names_to = "Platform", values_to = "followers") %>% 
+  mutate(Platform = fct_recode(Platform, "Facebook" = "facebook_followers", "Twitter" = "twitter_followers", "Instagram" = "instagram_followers", "LinkedIn" = "linked_in_followers")) %>% 
+  ggplot(mapping = aes(x = reorder(department_name,followers), followers, fill = Platform)) +
+  geom_col() +
+  coord_flip()+
+  theme(axis.title.y = element_blank()) +
+  labs(y="Followers", title = "Social Media Presence by Departments")
+
+```
+
+```{r}
+# Not used in the slides
+CA_Agencies %>% 
+  ggplot(aes(domain)) +
+  geom_bar()
+```
+
+
+```{r}
+# Not used in the slides
+CA_Agencies %>% 
+  ggplot(aes(x=total_followers, y=payroll)) +
+  geom_point()
+```
+
+```{r}
+# Not used in the slides
+CA_Agencies %>% 
+  group_by(localized) %>% 
+  summarise(avg_followers = mean(total_followers)) %>% 
+  ggplot(aes(x=localized, y=avg_followers)) +
+  geom_col()
+```
+
+```{r}
+# Not used in the slides
+CA_Agencies %>% 
+  filter(facebook == "YES" & twitter == "YES") %>% 
+  ggplot() + 
+  geom_point(aes(x=facebook_followers, y=twitter_followers))
+```
+
+```{r}
+# Used in slides p7
+CA_Agencies %>% 
+  filter(youtube == "YES") %>% 
+  ggplot() + 
+  geom_point(aes(x=staff_size, y=youtube_followers))+
+  
+  labs(x = "Staff Size",
+       y = "YouTube followers",
+       title = "Let the movie explain it for you?")
+
+```
+
+```{r}
+# Not used in the slides
+CA_Agencies %>% 
+  mutate(avg_pay= payroll/staff_size) %>% 
+  filter(twitter == "YES") %>% 
+  ggplot() + 
+  geom_point(aes(x=linked_in_followers, y=avg_pay))
+```
+
+
